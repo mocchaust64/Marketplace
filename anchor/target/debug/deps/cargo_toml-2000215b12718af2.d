@@ -1,0 +1,10 @@
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/libcargo_toml-2000215b12718af2.rmeta: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/cargo_toml.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/afs.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/error.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/inheritable.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/libcargo_toml-2000215b12718af2.rlib: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/cargo_toml.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/afs.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/error.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/inheritable.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/cargo_toml-2000215b12718af2.d: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/cargo_toml.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/afs.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/error.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/inheritable.rs
+
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/cargo_toml.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/afs.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/error.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cargo_toml-0.19.2/src/inheritable.rs:

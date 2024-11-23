@@ -1,0 +1,10 @@
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/sbf-solana-solana/release/deps/libthiserror-f12a4b5091f7bdf6.rmeta: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/aserror.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/display.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/provide.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/sbf-solana-solana/release/deps/libthiserror-f12a4b5091f7bdf6.rlib: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/aserror.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/display.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/provide.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/sbf-solana-solana/release/deps/thiserror-f12a4b5091f7bdf6.d: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/aserror.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/display.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/provide.rs
+
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/lib.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/aserror.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/display.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-1.0.61/src/provide.rs:

@@ -1,0 +1,10 @@
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/libsolana_frozen_abi-bcbc5ba8532719ff.rmeta: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_digester.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_example.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/hash.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/libsolana_frozen_abi-bcbc5ba8532719ff.rlib: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_digester.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_example.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/hash.rs
+
+/mnt/d/SolanaProjects/Marketplace/tai/nft-operations/anchor/target/debug/deps/solana_frozen_abi-bcbc5ba8532719ff.d: /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/lib.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_digester.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_example.rs /home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/hash.rs
+
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/lib.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_digester.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/abi_example.rs:
+/home/mocchaust64/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-frozen-abi-1.18.17/src/hash.rs:

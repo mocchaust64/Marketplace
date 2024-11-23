@@ -1,0 +1,21 @@
+node_modules/
+
+# Bỏ qua file hệ thống của Windows
+$RECYCLE.BIN/
+System Volume Information/
+pagefile.sys
+desktop.ini
+
+# Bỏ qua thư mục không liên quan
+../*
+!<dự_án_của_bạn>/
+
+# Bỏ qua file tạm
+*.tmp
+*.log
+*.bak
+*.xlsx~
+
+# Bỏ qua file IDE
+.idea/
+.DS_Store
