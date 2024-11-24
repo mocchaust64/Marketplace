@@ -76,6 +76,7 @@ pub struct MarketplaceConfig {
     pub authority: Pubkey,
     pub treasury_wallet: Pubkey,
     pub fee_percentage: u16,
+    pub is_paused: bool,
     pub bump: u8,
 }
 
@@ -85,7 +86,7 @@ pub struct InitializeMarketplace<'info> {
     pub authority: Signer<'info>,
     
     #[account(
-        init_if_needed,
+        init,
         payer = authority,
         space = 8 + std::mem::size_of::<MarketplaceConfig>(),
         seeds = [b"marketplace"],
@@ -94,20 +95,75 @@ pub struct InitializeMarketplace<'info> {
     pub config: Account<'info, MarketplaceConfig>,
     
     /// CHECK: Safe because this is just a wallet
-    pub treasury_wallet: UncheckedAccount<'info>,
+    pub treasury_wallet: AccountInfo<'info>,
     
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> InitializeMarketplace<'info> {
-    pub fn initialize(&mut self, fee_percentage: u16) -> Result<()> {
-        require!(fee_percentage <= 1000, MarketplaceError::InvalidFeePercentage);
-        
+    pub fn initialize(
+        &mut self,
+        fee_percentage: u16
+    ) -> Result<()> {
         let config = &mut self.config;
         config.authority = self.authority.key();
         config.treasury_wallet = self.treasury_wallet.key();
         config.fee_percentage = fee_percentage;
+        config.is_paused = false;
         
+        let (_, bump) = Pubkey::find_program_address(
+            &[b"marketplace"],
+            &crate::ID
+        );
+        config.bump = bump;
+        
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct CloseMarketplace<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    
+    #[account(
+        mut,
+        close = authority,
+        seeds = [b"marketplace"],
+        bump,
+        has_one = authority
+    )]
+    pub config: Account<'info, MarketplaceConfig>,
+    
+    pub system_program: Program<'info, System>,
+}
+
+pub fn close_marketplace(_ctx: Context<CloseMarketplace>) -> Result<()> {
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct PauseMarketplace<'info> {
+    #[account(
+        mut,
+        seeds = [b"marketplace"],
+        bump,
+        has_one = authority
+    )]
+    pub config: Account<'info, MarketplaceConfig>,
+    
+    pub authority: Signer<'info>,
+}
+
+
+impl<'info> PauseMarketplace<'info> {
+    pub fn pause(&mut self) -> Result<()> {
+        self.config.is_paused = true;
+        Ok(())
+    }
+
+    pub fn unpause(&mut self) -> Result<()> {
+        self.config.is_paused = false;
         Ok(())
     }
 }

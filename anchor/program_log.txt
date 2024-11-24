@@ -1,0 +1,7 @@
+error: unexpected argument '--verbose' found
+
+  tip: to pass '--verbose' as a value, use '-- --verbose'
+
+Usage: anchor-0.30.1 test [OPTIONS] [ARGS]... [-- <CARGO_ARGS>...]
+
+For more information, try '--help'.

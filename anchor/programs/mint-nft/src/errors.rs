@@ -11,3 +11,12 @@ pub enum MarketplaceError {
     #[msg("Listing has expired")]
     ListingExpired,
 }
+
+#[error_code]
+pub enum NFTError {
+    InvalidMetadata,
+    InvalidCollectionMetadata,
+    MetadataUpdateNotAllowed,
+    InvalidCreatorShare,
+    InvalidAuthority,
+}

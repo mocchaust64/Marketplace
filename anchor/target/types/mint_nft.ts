@@ -14,6 +14,58 @@ export type MintNft = {
   },
   "instructions": [
     {
+      "name": "closeMarketplace",
+      "discriminator": [
+        188,
+        226,
+        11,
+        173,
+        99,
+        175,
+        54,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createCollection",
       "discriminator": [
         156,
@@ -172,7 +224,16 @@ export type MintNft = {
           "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "collectionMetadata",
+          "type": {
+            "defined": {
+              "name": "nftMetadata"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "initializeMarketplace",
@@ -410,8 +471,36 @@ export type MintNft = {
         },
         {
           "name": "mint",
-          "writable": true,
-          "signer": true
+          "writable": true
+        },
+        {
+          "name": "mintAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "metadata",
+          "writable": true
+        },
+        {
+          "name": "masterEdition",
+          "writable": true
         },
         {
           "name": "destination",
@@ -504,36 +593,15 @@ export type MintNft = {
           }
         },
         {
-          "name": "metadata",
-          "writable": true
-        },
-        {
-          "name": "masterEdition",
-          "writable": true
-        },
-        {
-          "name": "mintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
-        },
-        {
           "name": "collectionMint",
+          "writable": true
+        },
+        {
+          "name": "collectionMetadata",
+          "writable": true
+        },
+        {
+          "name": "collectionMasterEdition",
           "writable": true
         },
         {
@@ -551,9 +619,220 @@ export type MintNft = {
         {
           "name": "tokenMetadataProgram",
           "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nftMetadata",
+          "type": {
+            "defined": {
+              "name": "nftMetadata"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "pauseMarketplace",
+      "discriminator": [
+        110,
+        211,
+        176,
+        142,
+        101,
+        22,
+        196,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
         }
       ],
       "args": []
+    },
+    {
+      "name": "unpauseMarketplace",
+      "discriminator": [
+        239,
+        246,
+        197,
+        175,
+        255,
+        203,
+        133,
+        127
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116,
+                  112,
+                  108,
+                  97,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "updateListing",
+      "discriminator": [
+        192,
+        174,
+        210,
+        68,
+        116,
+        40,
+        242,
+        253
+      ],
+      "accounts": [
+        {
+          "name": "listingAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  115,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "nftMint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "nftMint"
+        },
+        {
+          "name": "seller",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "listingAccount"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "duration",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "updateMetadata",
+      "discriminator": [
+        170,
+        182,
+        43,
+        239,
+        97,
+        78,
+        225,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "collectionMint"
+        },
+        {
+          "name": "metadata",
+          "writable": true
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        }
+      ],
+      "args": [
+        {
+          "name": "metadata",
+          "type": {
+            "defined": {
+              "name": "nftMetadata"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "verifyCollection",
@@ -570,6 +849,7 @@ export type MintNft = {
       "accounts": [
         {
           "name": "authority",
+          "writable": true,
           "signer": true
         },
         {
@@ -615,8 +895,7 @@ export type MintNft = {
           "address": "11111111111111111111111111111111"
         },
         {
-          "name": "sysvarInstruction",
-          "address": "Sysvar1nstructions1111111111111111111111111"
+          "name": "sysvarInstruction"
         },
         {
           "name": "tokenMetadataProgram",
@@ -678,6 +957,26 @@ export type MintNft = {
   ],
   "types": [
     {
+      "name": "creator",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": "pubkey"
+          },
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "share",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "listingAccount",
       "type": {
         "kind": "struct",
@@ -733,8 +1032,46 @@ export type MintNft = {
             "type": "u16"
           },
           {
+            "name": "isPaused",
+            "type": "bool"
+          },
+          {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "nftMetadata",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "sellerFeeBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "creators",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "creator"
+                }
+              }
+            }
           }
         ]
       }

@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use crate::contexts::metadata::Creator;
 use anchor_spl::{
     associated_token::AssociatedToken, 
     metadata::Metadata, 
@@ -10,6 +11,7 @@ use anchor_spl::{
         TokenAccount,
     }
 };
+
 use anchor_spl::metadata::mpl_token_metadata::{
     instructions::{
         CreateMasterEditionV3Cpi, 
@@ -21,12 +23,15 @@ use anchor_spl::metadata::mpl_token_metadata::{
     }, 
     types::{
         CollectionDetails, 
-        Creator, 
+       
         DataV2
     }
 };
+use crate::contexts::metadata::NFTMetadata;
+use crate::errors::NFTError;
 
 #[derive(Accounts)]
+#[instruction(collection_metadata: NFTMetadata)]
 pub struct CreateCollection<'info> {
     #[account(mut)]
     user: Signer<'info>,
@@ -64,7 +69,16 @@ pub struct CreateCollection<'info> {
 }
 
 impl<'info> CreateCollection<'info> {
-    pub fn create_collection(&mut self, bumps: &CreateCollectionBumps) -> Result<()> {
+    pub fn create_collection(
+        &mut self,
+        collection_metadata: NFTMetadata,
+        bumps: &CreateCollectionBumps
+    ) -> Result<()> {
+        // Validate metadata
+        require!(
+            collection_metadata.creators.iter().map(|c| c.share).sum::<u8>() == 100,
+            NFTError::InvalidCollectionMetadata
+        );
 
         let metadata = &self.metadata.to_account_info();
         let master_edition = &self.master_edition.to_account_info();
@@ -91,16 +105,8 @@ impl<'info> CreateCollection<'info> {
         mint_to(cpi_ctx, 1)?;
         msg!("Collection NFT minted!");
 
-        let creator = vec![
-            Creator {
-                address: self.mint_authority.key().clone(),
-                verified: true,
-                share: 100,
-            },
-        ];
-        
         let metadata_account = CreateMetadataAccountV3Cpi::new(
-            spl_metadata_program, 
+            spl_metadata_program,
             CreateMetadataAccountV3CpiAccounts {
                 metadata,
                 mint,
@@ -112,11 +118,11 @@ impl<'info> CreateCollection<'info> {
             },
             CreateMetadataAccountV3InstructionArgs {
                 data: DataV2 {
-                    name: "DummyCollection".to_owned(),
-                    symbol: "DC".to_owned(),
-                    uri: "".to_owned(),
-                    seller_fee_basis_points: 0,
-                    creators: Some(creator),
+                    name: collection_metadata.name,
+                    symbol: collection_metadata.symbol,
+                    uri: collection_metadata.uri,
+                    seller_fee_basis_points: collection_metadata.seller_fee_basis_points,
+                    creators: Some(Creator::to_metaplex_creators(collection_metadata.creators)),
                     collection: None,
                     uses: None,
                 },
