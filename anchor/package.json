@@ -19,8 +19,10 @@
   },
   "devDependencies": {
     "@types/chai": "^5.0.1",
+    "@types/chai-as-promised": "^8.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.17.7",
+    "chai-as-promised": "^8.0.1",
     "mocha": "^10.8.2",
     "node-test": "^1.0.0",
     "ts-mocha": "^10.0.0",

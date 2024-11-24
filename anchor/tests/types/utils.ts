@@ -1,4 +1,5 @@
 import * as anchor from '@coral-xyz/anchor';
+import { PublicKey } from '@solana/web3.js';
 
 export interface NFTMetadata {
   name: string;
@@ -135,6 +136,41 @@ export interface PauseMarketplaceAccounts {
 export interface UnpauseMarketplaceAccounts {
   authority: anchor.web3.PublicKey;
   config: anchor.web3.PublicKey;
+  systemProgram: anchor.web3.PublicKey;
+}
+
+// DelistNFT Account Interface
+export interface DelistNftAccounts {
+  owner: anchor.web3.PublicKey;
+  listingAccount: anchor.web3.PublicKey;
+  nftMint: anchor.web3.PublicKey;
+  nftToken: anchor.web3.PublicKey;
+  systemProgram: anchor.web3.PublicKey;
+  tokenProgram: anchor.web3.PublicKey;
+  associatedTokenProgram: anchor.web3.PublicKey;
+}
+
+// BuyNFT Account Interface
+export interface BuyNftAccounts {
+  buyer: PublicKey;
+  seller: PublicKey;
+  listingAccount: PublicKey;
+  nftMint: PublicKey;
+  buyerNftToken: PublicKey;
+  sellerNftToken: PublicKey;
+  marketplaceConfig: PublicKey;
+  treasuryWallet: PublicKey;
+  systemProgram: PublicKey;
+  tokenProgram: PublicKey;
+  associatedTokenProgram: PublicKey;
+}
+
+// UpdateMetadata Account Interface
+export interface UpdateMetadataAccounts {
+  authority: PublicKey;
+  metadata: PublicKey;
+  mint: PublicKey;
+  tokenMetadataProgram: PublicKey;
 }
 
 // Helper functions

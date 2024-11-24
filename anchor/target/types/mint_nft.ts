@@ -936,23 +936,23 @@ export type MintNft = {
   "errors": [
     {
       "code": 6000,
-      "name": "invalidFeePercentage",
-      "msg": "Invalid fee percentage"
+      "name": "invalidPrice",
+      "msg": "Giá phải lớn hơn 0"
     },
     {
       "code": 6001,
-      "name": "invalidPrice",
-      "msg": "Invalid listing price"
+      "name": "invalidOwner",
+      "msg": "Bạn không sở hữu NFT này"
     },
     {
       "code": 6002,
-      "name": "invalidOwner",
-      "msg": "NFT not owned by seller"
+      "name": "invalidSeller",
+      "msg": "Bạn không phải người bán NFT này"
     },
     {
       "code": 6003,
-      "name": "listingExpired",
-      "msg": "Listing has expired"
+      "name": "invalidCollection",
+      "msg": "NFT không thuộc collection này"
     }
   ],
   "types": [

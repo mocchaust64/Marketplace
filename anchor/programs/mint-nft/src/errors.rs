@@ -2,14 +2,17 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum MarketplaceError {
-    #[msg("Invalid fee percentage")]
-    InvalidFeePercentage,
-    #[msg("Invalid listing price")]
+    #[msg("Giá phải lớn hơn 0")]
     InvalidPrice,
-    #[msg("NFT not owned by seller")]
+    
+    #[msg("Bạn không sở hữu NFT này")]
     InvalidOwner,
-    #[msg("Listing has expired")]
-    ListingExpired,
+    
+    #[msg("Bạn không phải người bán NFT này")]
+    InvalidSeller,
+    
+    #[msg("NFT không thuộc collection này")]
+    InvalidCollection,
 }
 
 #[error_code]

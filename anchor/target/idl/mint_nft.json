@@ -930,23 +930,23 @@
   "errors": [
     {
       "code": 6000,
-      "name": "InvalidFeePercentage",
-      "msg": "Invalid fee percentage"
+      "name": "InvalidPrice",
+      "msg": "Giá phải lớn hơn 0"
     },
     {
       "code": 6001,
-      "name": "InvalidPrice",
-      "msg": "Invalid listing price"
+      "name": "InvalidOwner",
+      "msg": "Bạn không sở hữu NFT này"
     },
     {
       "code": 6002,
-      "name": "InvalidOwner",
-      "msg": "NFT not owned by seller"
+      "name": "InvalidSeller",
+      "msg": "Bạn không phải người bán NFT này"
     },
     {
       "code": 6003,
-      "name": "ListingExpired",
-      "msg": "Listing has expired"
+      "name": "InvalidCollection",
+      "msg": "NFT không thuộc collection này"
     }
   ],
   "types": [

@@ -98,6 +98,24 @@ describe('NFT Marketplace Tests', () => {
           }]
         };
 
+        console.log("\n=== SETUP PHASE - COLLECTION CREATION ===");
+        console.log("Collection Keypair generated:", {
+          publicKey: collectionKeypair.publicKey.toBase58(),
+          mint: collectionMint.toBase58()
+        });
+        console.log("PDA Mint Authority:", mintAuthority.toBase58());
+
+        console.log("\nPreparing collection metadata:", {
+          name: collectionMetadata.name,
+          symbol: collectionMetadata.symbol, 
+          uri: collectionMetadata.uri,
+          sellerFeeBasisPoints: collectionMetadata.sellerFeeBasisPoints,
+          creators: collectionMetadata.creators.map(c => ({
+            address: c.address.toBase58(),
+            share: c.share
+          }))
+        });
+
         await program.methods
           .createCollection(collectionMetadata)
           .accounts({

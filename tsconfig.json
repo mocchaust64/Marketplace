@@ -1,14 +1,18 @@
 {
     "compilerOptions": {
-      "target": "es2020",
+      "types": ["mocha", "chai"],
+      "typeRoots": ["./node_modules/@types"],
+      "lib": ["es2015", "dom"],
       "module": "commonjs",
-      "strict": true,
+      "target": "es6",
       "esModuleInterop": true,
+      "resolveJsonModule": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
       "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "outDir": "./dist",
-      "rootDir": "."
+      "strict": true,
+      "outDir": "dist"
     },
-    "include": ["anchor/tests/**/*"],
+    "include": ["tests/**/*"],
     "exclude": ["node_modules"]
   }
