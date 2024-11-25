@@ -1,12 +1,11 @@
-pub mod create_collection;
-pub mod mint_nft;
-pub mod verify_collection;
-pub mod metadata;
-pub mod marketplace;
-pub mod update_metadata;
-pub mod update_listing;
-
-
+mod create_collection;
+mod mint_nft;
+mod verify_collection;
+mod metadata;
+mod marketplace;
+mod update_metadata;
+mod update_listing;
+mod buy_nft;
 
 pub use create_collection::*;
 pub use mint_nft::*;
@@ -15,3 +14,4 @@ pub use metadata::*;
 pub use marketplace::*;
 pub use update_metadata::*;
 pub use update_listing::*;
+pub use buy_nft::*;

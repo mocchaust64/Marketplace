@@ -1,5 +1,6 @@
 import * as anchor from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
+import { Program } from "@coral-xyz/anchor";
 
 export interface NFTMetadata {
   name: string;
@@ -154,15 +155,17 @@ export interface DelistNftAccounts {
 export interface BuyNftAccounts {
   buyer: PublicKey;
   seller: PublicKey;
+  config: PublicKey;
   listingAccount: PublicKey;
   nftMint: PublicKey;
-  buyerNftToken: PublicKey;
-  sellerNftToken: PublicKey;
-  marketplaceConfig: PublicKey;
+  sellerTokenAccount: PublicKey;
+  buyerTokenAccount: PublicKey;
   treasuryWallet: PublicKey;
   systemProgram: PublicKey;
   tokenProgram: PublicKey;
   associatedTokenProgram: PublicKey;
+  rent: PublicKey;
+  marketplaceConfig: PublicKey;
 }
 
 // UpdateMetadata Account Interface
@@ -188,4 +191,25 @@ export const getMasterEdition = async (mint: anchor.web3.PublicKey): Promise<anc
     [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mint.toBuffer(), Buffer.from('edition')],
     TOKEN_METADATA_PROGRAM_ID,
   )[0];
+};
+
+export const createBuyNftAccounts = (
+  program: Program,
+  accounts: BuyNftAccounts
+) => {
+  return {
+    buyer: accounts.buyer,
+    seller: accounts.seller,
+    config: accounts.config,
+    listingAccount: accounts.listingAccount,
+    nftMint: accounts.nftMint,
+    sellerTokenAccount: accounts.sellerTokenAccount,
+    buyerTokenAccount: accounts.buyerTokenAccount,
+    treasuryWallet: accounts.treasuryWallet,
+    systemProgram: accounts.systemProgram,
+    tokenProgram: accounts.tokenProgram,
+    associatedTokenProgram: accounts.associatedTokenProgram,
+    rent: accounts.rent,
+    marketplaceConfig: accounts.marketplaceConfig,
+  };
 }; 

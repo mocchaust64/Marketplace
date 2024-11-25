@@ -1,17 +1,17 @@
 use anchor_lang::prelude::*;
 
+mod contexts;
+mod errors;
 
-pub mod contexts;
-pub mod errors;
-
-pub use contexts::*;
-pub use errors::*;
+use contexts::*;
+use errors::*;
 
 declare_id!("CFSd2NBvuNZY16M3jcYZufyZbhdok4esET8N2kyEdVrs");
 
 #[program]
-pub mod mint_nft {
+pub mod nft_marketplace {
     use super::*;
+
     pub fn create_collection(
         ctx: Context<CreateCollection>,
         collection_metadata: NFTMetadata
@@ -42,6 +42,7 @@ pub mod mint_nft {
         price: u64,
         duration: i64,
     ) -> Result<()> {
+        require!(price > 0, MarketplaceError::InvalidPrice);
         ctx.accounts.list_nft(price, duration)
     }
 
@@ -52,7 +53,12 @@ pub mod mint_nft {
         ctx.accounts.update_metadata(metadata)
     }
 
-    pub fn update_listing(ctx: Context<UpdateListingMint>, price: u64, duration: i64) -> Result<()> {
+    pub fn update_listing(
+        ctx: Context<UpdateListingMint>, 
+        price: u64, 
+        duration: i64
+    ) -> Result<()> {
+        require!(price > 0, MarketplaceError::InvalidPrice);
         ctx.accounts.update_listing(price, duration)
     }
 
@@ -67,5 +73,9 @@ pub mod mint_nft {
     pub fn close_marketplace(ctx: Context<CloseMarketplace>) -> Result<()> {
         msg!("Closing marketplace...");
         Ok(())
+    }
+
+    pub fn buy_nft(ctx: Context<BuyNft>) -> Result<()> {
+        ctx.accounts.buy_nft()
     }
 }

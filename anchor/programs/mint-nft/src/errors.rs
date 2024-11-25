@@ -22,4 +22,12 @@ pub enum NFTError {
     MetadataUpdateNotAllowed,
     InvalidCreatorShare,
     InvalidAuthority,
+    #[msg("Số dư không đủ để mua NFT")]
+    InsufficientBalance,
+    #[msg("Không thể mua NFT của chính mình")]
+    CannotBuyOwnNFT,
+    #[msg("NFT đã được bán hoặc listing đã bị hủy")]
+    ListingNotActive,
+    #[msg("Listing đã hết hạn")]
+    ListingExpired,
 }
