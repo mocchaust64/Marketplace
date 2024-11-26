@@ -4,8 +4,8 @@ use anchor_spl::{
     token::{self, Token, TokenAccount, Mint},
     associated_token::AssociatedToken,
 };
-use crate::errors::NFTError;
-use super::marketplace::{MarketplaceConfig, ListingAccount};
+use crate::errors::*;
+use crate::state::{ListingAccount, MarketplaceConfig};
 
 #[derive(Accounts)]
 pub struct BuyNft<'info> {
@@ -18,16 +18,18 @@ pub struct BuyNft<'info> {
     #[account(
         mut,
         seeds = [b"marketplace"],
-        bump
+        bump,
+        constraint = !config.is_paused @ MarketplaceError::MarketplacePaused
     )]
     pub config: Account<'info, MarketplaceConfig>,
     
     #[account(
         mut,
         seeds = [b"listing", nft_mint.key().as_ref()],
-        bump,
+        bump = listing_account.bump,
         close = seller,
-        has_one = seller
+        has_one = seller,
+        constraint = listing_account.is_active @ MarketplaceError::ListingNotActive
     )]
     pub listing_account: Account<'info, ListingAccount>,
     
@@ -40,6 +42,14 @@ pub struct BuyNft<'info> {
         associated_token::authority = seller
     )]
     pub seller_token_account: Account<'info, TokenAccount>,
+    
+    #[account(
+        mut,
+        associated_token::mint = nft_mint,
+        associated_token::authority = listing_account,
+        constraint = escrow_token_account.key() == listing_account.escrow_token_account
+    )]
+    pub escrow_token_account: Account<'info, TokenAccount>,
     
     #[account(
         init_if_needed,
@@ -63,13 +73,13 @@ impl<'info> BuyNft<'info> {
         // Check if buyer has enough balance
         require!(
             self.buyer.lamports() >= self.listing_account.price,
-            NFTError::InsufficientBalance
+            MarketplaceError::InsufficientBalance
         );
 
         // Check if buyer is not seller
         require!(
             self.buyer.key() != self.seller.key(),
-            NFTError::CannotBuyOwnNFT
+            MarketplaceError::CannotBuyOwnNFT
         );
 
         let listing_price = self.listing_account.price;
@@ -109,16 +119,20 @@ impl<'info> BuyNft<'info> {
             fee_amount,
         )?;
 
-        // Transfer NFT from seller to buyer
+        // Transfer NFT from escrow to buyer
         token::transfer(
             CpiContext::new_with_signer(
                 self.token_program.to_account_info(),
                 token::Transfer {
-                    from: self.seller_token_account.to_account_info(),
+                    from: self.escrow_token_account.to_account_info(),
                     to: self.buyer_token_account.to_account_info(),
-                    authority: self.seller.to_account_info(),
+                    authority: self.listing_account.to_account_info(),
                 },
-                &[]
+                &[&[
+                    b"listing",
+                    self.nft_mint.key().as_ref(),
+                    &[self.listing_account.bump]
+                ]]
             ),
             1,
         )?;

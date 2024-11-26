@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use crate::contexts::marketplace::ListingAccount;
+use crate::state::ListingAccount;
+use crate::errors::MarketplaceError;
 
 #[derive(Accounts)]
 pub struct UpdateListingMint<'info> {
@@ -7,7 +8,8 @@ pub struct UpdateListingMint<'info> {
         mut,
         seeds = [b"listing", nft_mint.key().as_ref()],
         bump,
-        has_one = seller
+        has_one = seller,
+        constraint = listing_account.is_active @ MarketplaceError::ListingNotActive
     )]
     pub listing_account: Account<'info, ListingAccount>,
     

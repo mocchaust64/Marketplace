@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Transfer};
 
-mod contexts;
-mod errors;
+pub mod state;
+pub mod contexts;
+pub mod errors;
 
 use contexts::*;
 use errors::*;
@@ -34,6 +36,10 @@ pub mod nft_marketplace {
         ctx: Context<InitializeMarketplace>,
         fee_percentage: u16,
     ) -> Result<()> {
+        require!(
+            fee_percentage <= 10000, // Max 100% = 10000 basis points
+            MarketplaceError::InvalidFeePercentage
+        );
         ctx.accounts.initialize(fee_percentage)
     }
 
@@ -43,6 +49,20 @@ pub mod nft_marketplace {
         duration: i64,
     ) -> Result<()> {
         require!(price > 0, MarketplaceError::InvalidPrice);
+        require!(duration > 0, MarketplaceError::InvalidDuration);
+        
+        // Transfer NFT to escrow first
+        let transfer_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.nft_token.to_account_info(),
+                to: ctx.accounts.escrow_token_account.to_account_info(),
+                authority: ctx.accounts.owner.to_account_info(),
+            },
+        );
+        token::transfer(transfer_ctx, 1)?;
+        
+        // Initialize listing
         ctx.accounts.list_nft(price, duration)
     }
 
@@ -59,6 +79,7 @@ pub mod nft_marketplace {
         duration: i64
     ) -> Result<()> {
         require!(price > 0, MarketplaceError::InvalidPrice);
+        require!(duration > 0, MarketplaceError::InvalidDuration);
         ctx.accounts.update_listing(price, duration)
     }
 
@@ -77,5 +98,22 @@ pub mod nft_marketplace {
 
     pub fn buy_nft(ctx: Context<BuyNft>) -> Result<()> {
         ctx.accounts.buy_nft()
+    }
+
+    pub fn delist_nft(ctx: Context<DelistNft>) -> Result<()> {
+        // Verify listing is active
+        require!(
+            ctx.accounts.listing_account.is_active,
+            MarketplaceError::ListingNotActive
+        );
+        
+        // Verify escrow token account
+        require!(
+            ctx.accounts.escrow_token_account.key() == ctx.accounts.listing_account.escrow_token_account,
+            MarketplaceError::InvalidEscrowAccount
+        );
+        
+        // Transfer NFT back and close accounts
+        ctx.accounts.delist_nft()
     }
 }

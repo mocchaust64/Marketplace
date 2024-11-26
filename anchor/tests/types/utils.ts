@@ -1,6 +1,7 @@
 import * as anchor from '@coral-xyz/anchor';
 import { PublicKey } from '@solana/web3.js';
 import { Program } from "@coral-xyz/anchor";
+import { BN } from 'bn.js';
 
 export interface NFTMetadata {
   name: string;
@@ -84,9 +85,13 @@ export interface ListNftAccounts {
   listingAccount: anchor.web3.PublicKey;
   nftMint: anchor.web3.PublicKey;
   nftToken: anchor.web3.PublicKey;
+  escrowTokenAccount: anchor.web3.PublicKey;
+  marketplaceConfig: anchor.web3.PublicKey;
   systemProgram: anchor.web3.PublicKey;
   tokenProgram: anchor.web3.PublicKey;
   associatedTokenProgram: anchor.web3.PublicKey;
+  rent: anchor.web3.PublicKey;
+  authority: anchor.web3.PublicKey;
 }
 
 export interface MarketplaceAccounts {
@@ -94,6 +99,7 @@ export interface MarketplaceAccounts {
   config: anchor.web3.PublicKey;
   treasuryWallet: anchor.web3.PublicKey;
   systemProgram: anchor.web3.PublicKey;
+  rent: anchor.web3.PublicKey;
 }
 
 export interface VerifyCollectionAccounts {
@@ -124,9 +130,11 @@ export interface CreateCollectionInstructionAccounts {
 }
 
 export interface UpdateListingAccounts {
-  seller: anchor.web3.PublicKey;
-  listingAccount: anchor.web3.PublicKey;
-  nftMint: anchor.web3.PublicKey;
+  seller: PublicKey;
+  listingAccount: PublicKey;
+  nftMint: PublicKey;
+  escrowTokenAccount: PublicKey;
+  marketplaceConfig: PublicKey;
 }
 
 export interface PauseMarketplaceAccounts {
@@ -145,10 +153,12 @@ export interface DelistNftAccounts {
   owner: anchor.web3.PublicKey;
   listingAccount: anchor.web3.PublicKey;
   nftMint: anchor.web3.PublicKey;
-  nftToken: anchor.web3.PublicKey;
+  ownerTokenAccount: anchor.web3.PublicKey;
+  escrowTokenAccount: anchor.web3.PublicKey;
   systemProgram: anchor.web3.PublicKey;
   tokenProgram: anchor.web3.PublicKey;
   associatedTokenProgram: anchor.web3.PublicKey;
+  rent: anchor.web3.PublicKey;
 }
 
 // BuyNFT Account Interface
@@ -159,13 +169,13 @@ export interface BuyNftAccounts {
   listingAccount: PublicKey;
   nftMint: PublicKey;
   sellerTokenAccount: PublicKey;
+  escrowTokenAccount: PublicKey;
   buyerTokenAccount: PublicKey;
   treasuryWallet: PublicKey;
   systemProgram: PublicKey;
   tokenProgram: PublicKey;
   associatedTokenProgram: PublicKey;
   rent: PublicKey;
-  marketplaceConfig: PublicKey;
 }
 
 // UpdateMetadata Account Interface
@@ -204,12 +214,34 @@ export const createBuyNftAccounts = (
     listingAccount: accounts.listingAccount,
     nftMint: accounts.nftMint,
     sellerTokenAccount: accounts.sellerTokenAccount,
+    escrowTokenAccount: accounts.escrowTokenAccount,
     buyerTokenAccount: accounts.buyerTokenAccount,
     treasuryWallet: accounts.treasuryWallet,
     systemProgram: accounts.systemProgram,
     tokenProgram: accounts.tokenProgram,
     associatedTokenProgram: accounts.associatedTokenProgram,
     rent: accounts.rent,
-    marketplaceConfig: accounts.marketplaceConfig,
   };
+};
+
+export interface ListingAccount {
+  seller: PublicKey;
+  nftMint: PublicKey;
+  price: BN;
+  tokenAccount: PublicKey;
+  escrowTokenAccount: PublicKey;
+  createdAt: BN;
+  expiresAt: BN | null;
+  isActive: boolean;
+  bump: number;
+}
+
+export const getListingPDA = (
+  mint: anchor.web3.PublicKey,
+  programId: anchor.web3.PublicKey
+): [anchor.web3.PublicKey, number] => {
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('listing'), mint.toBuffer()],
+    programId
+  );
 }; 

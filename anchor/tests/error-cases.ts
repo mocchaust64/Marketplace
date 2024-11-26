@@ -6,17 +6,43 @@ import { SystemProgram, Keypair } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { MintNft } from '../target/types/mint_nft';
 import { ListNftAccounts, UpdateListingAccounts, MarketplaceAccounts } from './types/utils';
+import { PublicKey } from '@solana/web3.js';
 
 describe('NFT Marketplace Error Cases', () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-  const wallet = provider.wallet as NodeWallet;
-  const program = anchor.workspace.MintNft as Program<MintNft>;
-
-  let mint: anchor.web3.PublicKey;
-  let mintKeypair: Keypair;
+  const program = anchor.workspace.NftMarketplace as Program;
+  const wallet = provider.wallet as anchor.Wallet;
   
+  let mint: PublicKey;
+  let mintKeypair: Keypair;
+  let marketplaceConfig: PublicKey;
+  let treasuryWallet: PublicKey;
+  let nftPrice = new BN(1_000_000_000);
+  let duration = new BN(7 * 24 * 60 * 60);
+
   before(async () => {
+    // Thêm hàm close marketplace
+    async function closeExistingMarketplace() {
+      try {
+        const accountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+        if (accountInfo !== null) {
+          await program.methods
+            .closeMarketplace()
+            .accounts({
+              authority: wallet.publicKey,
+              config: marketplaceConfig,
+              systemProgram: SystemProgram.programId,
+            })
+            .rpc();
+          console.log("Đã close marketplace cũ");
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      } catch (err) {
+        console.log("Không có marketplace cũ để close");
+      }
+    }
+
     console.log("\n=== SETUP MINT ACCOUNT ===");
     console.log("Khởi tạo mint keypair mới...");
     
@@ -78,6 +104,47 @@ describe('NFT Marketplace Error Cases', () => {
     );
     
     console.log("✅ Đã mint token cho owner");
+    
+    // Thêm code khởi tạo marketplace sau phần mint token
+    console.log("\nKhởi tạo marketplace...");
+    [marketplaceConfig] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('marketplace')],
+      program.programId
+    );
+    
+    // Close marketplace cũ trước
+    await closeExistingMarketplace();
+    
+    // Khởi tạo marketplace mới
+    treasuryWallet = Keypair.generate().publicKey;
+    await program.methods
+      .initializeMarketplace(200)
+      .accounts({
+        authority: wallet.publicKey,
+        config: marketplaceConfig,
+        treasuryWallet,
+        systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .signers([wallet.payer])
+      .rpc();
+    
+    console.log("✅ Đã khởi tạo marketplace");
+
+    async function verifyMarketplaceInitialization(tx: string) {
+      await provider.connection.confirmTransaction(tx);
+      console.log("Transaction signature:", tx);
+
+      const newAccountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+      console.log("New account owner:", newAccountInfo?.owner.toBase58());
+      
+      if (!newAccountInfo || newAccountInfo.owner.toBase58() !== program.programId.toBase58()) {
+        throw new Error("Marketplace không được khởi tạo đúng cách");
+      }
+    }
+
+    // Thêm verify sau khi khởi tạo marketplace
+    await verifyMarketplaceInitialization(tx);
   });
 
   it("Test InvalidPrice Error", async () => {
@@ -101,6 +168,8 @@ describe('NFT Marketplace Error Cases', () => {
     console.log("\nThử list NFT với giá 0 SOL...");
     
     try {
+      const escrowTokenAccount = getAssociatedTokenAddressSync(mint, listingAccount, true);
+
       await program.methods
         .listNft(invalidPrice, duration)
         .accounts({
@@ -108,10 +177,13 @@ describe('NFT Marketplace Error Cases', () => {
           listingAccount,
           nftMint: mint,
           nftToken,
+          escrowTokenAccount,
+          marketplaceConfig,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        } as ListNftAccounts)
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY
+        })
         .rpc();
       
       throw new Error("Giao dịch phải thất bại với giá = 0");
@@ -178,6 +250,8 @@ describe('NFT Marketplace Error Cases', () => {
     console.log("\nThử list NFT với fake owner...");
     
     try {
+      const escrowTokenAccount = getAssociatedTokenAddressSync(mint, listingAccount, true);
+
       await program.methods
         .listNft(price, duration)
         .accounts({
@@ -185,10 +259,13 @@ describe('NFT Marketplace Error Cases', () => {
           listingAccount,
           nftMint: mint,
           nftToken,
+          escrowTokenAccount,
+          marketplaceConfig,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        } as ListNftAccounts)
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY
+        })
         .signers([fakeOwner])
         .rpc();
       
@@ -249,7 +326,7 @@ describe('NFT Marketplace Error Cases', () => {
           config: marketplaceConfig,
           treasuryWallet,
           systemProgram: SystemProgram.programId,
-        } as MarketplaceAccounts)
+        } )
         .rpc();
 
       console.log("✅ Đã khởi tạo marketplace mới");
@@ -265,7 +342,7 @@ describe('NFT Marketplace Error Cases', () => {
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        } as ListNftAccounts)
+        } )
         .rpc();
         
       console.log("✅ NFT đã được list bởi owner thật");
@@ -286,7 +363,7 @@ describe('NFT Marketplace Error Cases', () => {
             listingAccount,
             nftMint: mint,
             marketplaceConfig,
-          } as UpdateListingAccounts)
+          } )
           .signers([fakeSeller])
           .rpc();
         

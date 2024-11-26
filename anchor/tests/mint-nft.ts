@@ -1,8 +1,8 @@
 import * as anchor from '@coral-xyz/anchor';
 import type { Program } from '@coral-xyz/anchor';
 import type NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createInitializeMintInstruction } from '@solana/spl-token';
-import { SystemProgram, Keypair } from '@solana/web3.js';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createInitializeMintInstruction, createMintToInstruction, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { SystemProgram, Keypair, PublicKey } from '@solana/web3.js';
 import type { MintNft } from '../target/types/mint_nft';
 
 import { 
@@ -16,17 +16,32 @@ import {
   getMasterEdition,
   UpdateListingAccounts,
   PauseMarketplaceAccounts,
-  UnpauseMarketplaceAccounts
+  UnpauseMarketplaceAccounts,
+  ListingAccount
 } from './types/utils';
-import { createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
+import { NftMarketplace } from '../target/types/nft_marketplace';
+
+// Khai báo provider và program
+const provider = anchor.AnchorProvider.env();
+anchor.setProvider(provider);
+const program = anchor.workspace.NftMarketplace as Program<NftMarketplace>;
+const wallet = provider.wallet as NodeWallet;
+
+// Khai báo các biến global
+let marketplaceConfig: PublicKey;
+let treasuryWallet: PublicKey;
+let nftPrice = new BN(1_000_000_000); // 1 SOL
+let duration = new BN(7 * 24 * 60 * 60); // 7 days
+
+// Khởi tạo marketplaceConfig PDA
+[marketplaceConfig] = PublicKey.findProgramAddressSync(
+  [Buffer.from('marketplace')],
+  program.programId
+);
 
 describe('NFT Marketplace Tests', () => {
-  const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
-  const wallet = provider.wallet as NodeWallet;
-  const program = anchor.workspace.MintNft as Program<MintNft>;
-
+ 
   const TOKEN_METADATA_PROGRAM_ID = new anchor.web3.PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
   
   const [mintAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -49,10 +64,10 @@ describe('NFT Marketplace Tests', () => {
       console.log("\n=== SETUP PHASE ===");
       
       try {
-        const [marketplaceConfig] = anchor.web3.PublicKey.findProgramAddressSync(
+        marketplaceConfig = anchor.web3.PublicKey.findProgramAddressSync(
           [Buffer.from('marketplace')],
           program.programId
-        );
+        )[0];
         
         // Pause marketplace nếu nó đang active
         const account = await program.account.marketplaceConfig.fetch(marketplaceConfig);
@@ -152,7 +167,7 @@ describe('NFT Marketplace Tests', () => {
           fromPubkey: wallet.publicKey,
           newAccountPubkey: mint,
           space: 82,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(82),
+          lamports: lamports,
           programId: TOKEN_PROGRAM_ID
         });
 
@@ -163,19 +178,24 @@ describe('NFT Marketplace Tests', () => {
           mintAuthority
         );
 
-        // Tạo và gửi transaction
-        try {
-          await provider.sendAndConfirm(
-            new anchor.web3.Transaction()
-              .add(createAccountIx)
-              .add(initializeMintIx),
-            [mintKeypair]
-          );
-          console.log("✅ Mint account initialized!");
-        } catch (err) {
-          console.error("❌ Error initializing mint account:", err);
-          throw err;
-        }
+        // 2. Tạo token account cho owner
+        const nftToken = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+        const createTokenAccountIx = createAssociatedTokenAccountInstruction(
+          wallet.publicKey,
+          nftToken,
+          wallet.publicKey,
+          mint
+        );
+
+        await provider.sendAndConfirm(
+          new anchor.web3.Transaction()
+            .add(createAccountIx)
+            .add(initializeMintIx)
+            .add(createTokenAccountIx),
+          [mintKeypair]
+        );
+
+        console.log("✅ Đã mint token cho owner");
 
         isMintInitialized = true;
       }
@@ -317,50 +337,69 @@ describe('NFT Marketplace Tests', () => {
   });
 
   describe('Marketplace Flow', () => {
-    let nftPrice = new BN(1_000_000_000); // 1 SOL
-    let duration = new BN(7 * 24 * 60 * 60); // 7 days in seconds
-    let feePercentage = 200; // 2%
-    
     it("Bước 1: Initialize marketplace", async () => {
       try {
         console.log("\n=== INITIALIZE MARKETPLACE ===");
+        console.log("Program ID:", program.programId.toBase58());
+        console.log("Marketplace Config:", marketplaceConfig.toBase58());
         
-        const [marketplaceConfig] = anchor.web3.PublicKey.findProgramAddressSync(
-          [Buffer.from('marketplace')],
-          program.programId
-        );
-
-        // Thử close marketplace cũ nếu tồn tại
+        // Xóa marketplace cũ nếu tồn tại
         try {
-          await program.methods
-            .closeMarketplace()
-            .accounts({
-              authority: wallet.publicKey,
-              config: marketplaceConfig,
-              systemProgram: SystemProgram.programId,
-            })
-            .rpc();
-          console.log("Closed existing marketplace");
+          const accountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+          console.log("Current account owner:", accountInfo?.owner.toBase58() || "Not initialized");
+          
+          if (accountInfo !== null) {
+            await program.methods
+              .closeMarketplace()
+              .accounts({
+                authority: wallet.publicKey,
+                config: marketplaceConfig,
+                systemProgram: SystemProgram.programId,
+              })
+              .rpc();
+            console.log("Đã close marketplace cũ");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
         } catch (err) {
-          console.log("No existing marketplace to close");
+          console.log("Không có marketplace cũ để close");
         }
 
-        const treasuryWallet = Keypair.generate().publicKey;
+        // Khởi tạo marketplace mới
+        treasuryWallet = Keypair.generate().publicKey;
+        console.log("Treasury wallet:", treasuryWallet.toBase58());
+
+        // Kiểm tra program ID
+        console.log("Expected program ID:", program.programId.toBase58());
+        console.log("Current program ID:", (await provider.connection.getAccountInfo(program.programId))?.owner.toBase58());
+
         
-        // Tiếp tục khởi tạo marketplace mới
+       
+
         const tx = await program.methods
-          .initializeMarketplace(feePercentage)
+          .initializeMarketplace(200)
           .accounts({
             authority: wallet.publicKey,
             config: marketplaceConfig,
             treasuryWallet,
             systemProgram: SystemProgram.programId,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           } as MarketplaceAccounts)
+          .signers([wallet.payer])
           .rpc();
 
-        console.log("✅ Marketplace initialized successfully!");
+        await provider.connection.confirmTransaction(tx);
         console.log("Transaction signature:", tx);
+
+        // Kiểm tra account sau khi khởi tạo
+        const newAccountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+        console.log("New account owner:", newAccountInfo?.owner.toBase58());
         
+        if (!newAccountInfo || newAccountInfo.owner.toBase58() !== program.programId.toBase58()) {
+          throw new Error("Marketplace không được khởi tạo đúng cách");
+        }
+
+        console.log("✅ Đã khởi tạo marketplace mới");
+
       } catch (error) {
         console.error("\n❌ LỖI KHI INITIALIZE MARKETPLACE:");
         logError(error);
@@ -378,26 +417,33 @@ describe('NFT Marketplace Tests', () => {
         );
 
         const nftToken = getAssociatedTokenAddressSync(mint, wallet.publicKey);
+        const escrowTokenAccount = getAssociatedTokenAddressSync(mint, listingAccount, true);
         
+        // Log thông tin trước khi list
         console.log({
           listingAccount: listingAccount.toBase58(),
           nftMint: mint.toBase58(),
           nftToken: nftToken.toBase58(),
           seller: wallet.publicKey.toBase58(),
           price: nftPrice.toString(),
-          duration: duration.toString()
+          duration: duration.toString(),
+          marketplaceConfig: marketplaceConfig.toBase58()
         });
 
         const tx = await program.methods
           .listNft(nftPrice, duration)
           .accounts({
             owner: wallet.publicKey,
+            authority: wallet.publicKey,
             listingAccount,
             nftMint: mint,
             nftToken,
+            escrowTokenAccount,
+            marketplaceConfig,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY
           } as ListNftAccounts)
           .rpc();
 
@@ -415,23 +461,15 @@ describe('NFT Marketplace Tests', () => {
       try {
         console.log("\n=== UPDATE LISTING ===");
         
-        const newPrice = new BN(2_000_000_000); // 2 SOL
-        const newDuration = new BN(14 * 24 * 60 * 60); // 14 days
+        const newPrice = new BN(2_000_000_000);
+        const newDuration = new BN(14 * 24 * 60 * 60);
         
         const [listingAccount] = anchor.web3.PublicKey.findProgramAddressSync(
           [Buffer.from('listing'), mint.toBuffer()],
           program.programId
         );
 
-        console.log({
-          listingAccount: listingAccount.toBase58(),
-          nftMint: mint.toBase58(),
-          seller: wallet.publicKey.toBase58(),
-          oldPrice: nftPrice.toString(),
-          newPrice: newPrice.toString(),
-          oldDuration: duration.toString(),
-          newDuration: newDuration.toString()
-        });
+        const escrowTokenAccount = getAssociatedTokenAddressSync(mint, listingAccount, true);
 
         const tx = await program.methods
           .updateListing(newPrice, newDuration)
@@ -439,6 +477,8 @@ describe('NFT Marketplace Tests', () => {
             seller: wallet.publicKey,
             listingAccount,
             nftMint: mint,
+            escrowTokenAccount,
+            marketplaceConfig, // Sử dụng biến global
           } as UpdateListingAccounts)
           .rpc();
 

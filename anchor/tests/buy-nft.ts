@@ -3,7 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, createMintToInstruction, createInitializeMintInstruction, createAssociatedTokenAccountInstruction } from "@solana/spl-token";
 import { BN } from "bn.js";
-import { BuyNftAccounts } from './types/utils';
+import { BuyNftAccounts, MarketplaceAccounts } from './types/utils';
 
 describe('Buy NFT Tests', () => {
   const provider = anchor.AnchorProvider.env();
@@ -23,7 +23,63 @@ describe('Buy NFT Tests', () => {
   let isMarketplaceInitialized = false;
   let isNftListed = false;
   let listingAccount: PublicKey;
+  // Thêm sau dòng 25 trong buy-nft.ts
+async function closeExistingMarketplace() {
+  try {
+    const accountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+    if (accountInfo !== null) {
+      await program.methods
+        .closeMarketplace()
+        .accounts({
+          authority: wallet.publicKey,
+          config: marketplaceConfig,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+      console.log("Đã close marketplace cũ");
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  } catch (err) {
+    console.log("Không có marketplace cũ để close");
+  }
+}
+
+async function verifyMarketplaceInitialization(tx: string) {
+  await provider.connection.confirmTransaction(tx);
+  console.log("Transaction signature:", tx);
+
+  const newAccountInfo = await provider.connection.getAccountInfo(marketplaceConfig);
+  console.log("New account owner:", newAccountInfo?.owner.toBase58());
   
+  if (!newAccountInfo || newAccountInfo.owner.toBase58() !== program.programId.toBase58()) {
+    throw new Error("Marketplace không được khởi tạo đúng cách");
+  }
+  console.log("✅ Đã khởi tạo marketplace mới");
+}
+
+async function initializeMarketplace() {
+  console.log("\n=== INITIALIZE MARKETPLACE ===");
+  
+  // Kiểm tra và close marketplace cũ
+  await closeExistingMarketplace();
+  
+  // Khởi tạo marketplace mới
+  treasuryWallet = Keypair.generate().publicKey;
+  const tx = await program.methods
+    .initializeMarketplace(200)
+    .accounts({
+      authority: wallet.publicKey,
+      config: marketplaceConfig,
+      treasuryWallet,
+      systemProgram: SystemProgram.programId,
+      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+    } )
+    .signers([wallet.payer])
+    .rpc();
+    
+  await verifyMarketplaceInitialization(tx);
+  return tx;
+}
   before(async () => {
     console.log("\n=== SETUP MINT AND NFT ===");
     console.log("1. Tạo mint keypair mới...");
@@ -86,40 +142,13 @@ describe('Buy NFT Tests', () => {
 
     console.log("5. Setup marketplace...");
     if (!isMarketplaceInitialized) {
-      const [marketplaceConfig] = anchor.web3.PublicKey.findProgramAddressSync(
+      marketplaceConfig = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('marketplace')],
         program.programId
-      );
-
-      // Close marketplace cũ nếu tồn tại
-      try {
-        await program.methods
-          .closeMarketplace()
-          .accounts({
-            authority: wallet.publicKey,
-            config: marketplaceConfig,
-            systemProgram: SystemProgram.programId,
-          })
-          .rpc();
-        console.log("Đã close marketplace cũ");
-      } catch (err) {
-        console.log("Không có marketplace cũ để close");
-      }
-
-      // Khởi tạo marketplace mới
-      treasuryWallet = Keypair.generate().publicKey;
-      await program.methods
-        .initializeMarketplace(200)
-        .accounts({
-          authority: wallet.publicKey,
-          config: marketplaceConfig,
-          treasuryWallet,
-          systemProgram: SystemProgram.programId,
-        })
-        .rpc();
+      )[0];
       
+      await initializeMarketplace();
       isMarketplaceInitialized = true;
-      console.log("✅ Marketplace initialized");
     }
 
     console.log("6. List NFT...");
@@ -131,6 +160,12 @@ describe('Buy NFT Tests', () => {
       
       const nftToken = getAssociatedTokenAddressSync(mint, wallet.publicKey);
       
+      const escrowTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        listingAccount,
+        true
+      );
+      
       await program.methods
         .listNft(nftPrice, duration)
         .accounts({
@@ -138,9 +173,12 @@ describe('Buy NFT Tests', () => {
           listingAccount,
           nftMint: mint,
           nftToken,
+          escrowTokenAccount,
+          marketplaceConfig,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY
         })
         .rpc();
         
@@ -149,18 +187,20 @@ describe('Buy NFT Tests', () => {
     }
 
     console.log("7. Setup buyer với 2 SOL...");
-    // Setup buyer với 2 SOL
     buyer = Keypair.generate();
-    const transferIx = SystemProgram.transfer({
+    
+    // Transfer 2 SOL cho buyer
+    const transferSOLIx = SystemProgram.transfer({
       fromPubkey: wallet.publicKey,
       toPubkey: buyer.publicKey,
       lamports: 2 * LAMPORTS_PER_SOL
     });
-    
+
     await provider.sendAndConfirm(
-      new anchor.web3.Transaction().add(transferIx)
+      new anchor.web3.Transaction().add(transferSOLIx),
+      []
     );
-    
+
     console.log("✅ Test setup completed");
   });
 
@@ -224,6 +264,8 @@ describe('Buy NFT Tests', () => {
       program.programId
     );
     
+    const escrowTokenAccount = getAssociatedTokenAddressSync(newMint, newListingAccount, true);
+
     await program.methods
       .listNft(nftPrice, duration)
       .accounts({
@@ -231,9 +273,12 @@ describe('Buy NFT Tests', () => {
         listingAccount: newListingAccount,
         nftMint: newMint,
         nftToken,
+        escrowTokenAccount,
+        marketplaceConfig,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY
       })
       .rpc();
       
@@ -248,44 +293,78 @@ describe('Buy NFT Tests', () => {
   it("Buy NFT Successfully", async () => {
     try {
       console.log("\n=== BUY NFT ===");
-      console.log("1. Lấy marketplace config...");
-      const [marketplaceConfig] = anchor.web3.PublicKey.findProgramAddressSync(
-        [Buffer.from('marketplace')],
-        program.programId
+      
+      // Tạo buyer mới và fund SOL
+      buyer = Keypair.generate();
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: buyer.publicKey, 
+        lamports: 2 * LAMPORTS_PER_SOL
+      });
+      
+      await provider.sendAndConfirm(
+        new anchor.web3.Transaction().add(transferIx),
+        []
       );
-
-      console.log("2. Lấy listing account và token accounts...");
-      const [listingAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+      
+      // Setup listing mới
+      await setupNewListing();
+      
+      // Lấy các accounts cần thiết
+      const [listingAccountPDA] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('listing'), mint.toBuffer()],
         program.programId
       );
 
       const sellerTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
       const buyerTokenAccount = getAssociatedTokenAddressSync(mint, buyer.publicKey);
+      const escrowTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        listingAccountPDA,
+        true
+      );
 
-      console.log("4. Thực hiện giao dịch mua NFT...");
+      // Tạo token account cho buyer
+      const createTokenAccountIx = createAssociatedTokenAccountInstruction(
+        wallet.publicKey, // Sử dụng wallet để trả phí rent
+        buyerTokenAccount,
+        buyer.publicKey,
+        mint
+      );
+
+      // Tạo token account cho buyer trước
+      await provider.sendAndConfirm(
+        new anchor.web3.Transaction().add(createTokenAccountIx),
+        []
+      );
+
+      console.log("Thực hiện giao dịch mua NFT...");
+      const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 300_000
+      });
+
       await program.methods
         .buyNft()
         .accounts({
           buyer: buyer.publicKey,
           seller: wallet.publicKey,
           config: marketplaceConfig,
-          listingAccount,
+          listingAccount: listingAccountPDA,
           nftMint: mint,
           sellerTokenAccount,
+          escrowTokenAccount,
           buyerTokenAccount,
           treasuryWallet,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          marketplaceConfig,
         })
+        .preInstructions([modifyComputeUnits])
         .signers([buyer])
         .rpc();
 
-      console.log("✅ NFT bought successfully!");
-
+      console.log("✅ Mua NFT thành công!");
     } catch (error) {
       console.error("\n❌ LỖI KHI MUA NFT:");
       logError(error);
@@ -301,18 +380,15 @@ describe('Buy NFT Tests', () => {
       console.log("\n=== TEST INSUFFICIENT BALANCE ===");
       console.log("1. Tạo poorBuyer không có SOL...");
       const poorBuyer = Keypair.generate();
-
+      const poorBuyerTokenAccount = getAssociatedTokenAddressSync(mint, poorBuyer.publicKey);
       // Lấy listing account PDA
       const [listingAccount] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from('listing'), mint.toBuffer()],
         program.programId
       );
-
       // Lấy seller token account
       const sellerTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
-
       console.log("2. Tạo token account cho poorBuyer...");
-      const poorBuyerTokenAccount = getAssociatedTokenAddressSync(mint, poorBuyer.publicKey);
       const createTokenAccountIx = createAssociatedTokenAccountInstruction(
         wallet.publicKey,
         poorBuyerTokenAccount,
@@ -326,6 +402,12 @@ describe('Buy NFT Tests', () => {
       );
 
       console.log("3. Thử mua NFT với số dư không đủ...");
+      const escrowTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        listingAccount,
+        true
+      );
+
       await program.methods
         .buyNft()
         .accounts({
@@ -335,13 +417,13 @@ describe('Buy NFT Tests', () => {
           listingAccount: listingAccount,
           nftMint: mint,
           sellerTokenAccount: sellerTokenAccount,
+          escrowTokenAccount,
           buyerTokenAccount: poorBuyerTokenAccount,
           treasuryWallet,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          marketplaceConfig: marketplaceConfig,
         })
         .signers([poorBuyer])
         .rpc();
@@ -370,6 +452,12 @@ describe('Buy NFT Tests', () => {
       const sellerTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
       const buyerTokenAccount = getAssociatedTokenAddressSync(mint, wallet.publicKey);
 
+      const escrowTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        listingAccountPDA,
+        true
+      );
+
       await program.methods
         .buyNft()
         .accounts({
@@ -379,13 +467,13 @@ describe('Buy NFT Tests', () => {
           listingAccount: listingAccountPDA,
           nftMint: mint,
           sellerTokenAccount,
+          escrowTokenAccount,
           buyerTokenAccount,
           treasuryWallet,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          marketplaceConfig,
         })
         .rpc();
 
