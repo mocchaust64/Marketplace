@@ -50,7 +50,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -70,7 +73,10 @@
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -359,6 +365,10 @@
           "writable": true
         },
         {
+          "name": "creator_wallet",
+          "writable": true
+        },
+        {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         },
@@ -375,7 +385,12 @@
           "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "royalty_percentage",
+          "type": "u16"
+        }
+      ]
     },
     {
       "name": "close_marketplace",
@@ -416,7 +431,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -631,7 +649,10 @@
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -879,7 +900,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -932,7 +956,10 @@
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -1142,7 +1169,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1200,24 +1230,8 @@
         },
         {
           "name": "mint_authority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
+          "writable": true,
+          "signer": true
         },
         {
           "name": "metadata",
@@ -1392,7 +1406,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1439,7 +1456,10 @@
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1482,7 +1502,10 @@
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -1661,63 +1684,58 @@
   "errors": [
     {
       "code": 6000,
-      "name": "MarketplacePaused",
-      "msg": "Marketplace đang tạm dừng"
+      "name": "InvalidMetadata",
+      "msg": "Invalid metadata"
     },
     {
       "code": 6001,
-      "name": "InvalidPrice",
-      "msg": "Giá phải lớn hơn 0"
+      "name": "InvalidCollectionMetadata",
+      "msg": "Invalid collection metadata"
     },
     {
       "code": 6002,
-      "name": "InvalidOwner",
-      "msg": "Bạn không sở hữu NFT này"
+      "name": "MetadataUpdateNotAllowed",
+      "msg": "Metadata update not allowed"
     },
     {
       "code": 6003,
-      "name": "InvalidSeller",
-      "msg": "Bạn không phải người bán NFT này"
+      "name": "InvalidCreatorShare",
+      "msg": "Invalid creator share"
     },
     {
       "code": 6004,
-      "name": "InvalidCollection",
-      "msg": "NFT không thuộc collection này"
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority"
     },
     {
       "code": 6005,
-      "name": "ListingNotActive",
-      "msg": "NFT listing không còn active"
+      "name": "InvalidMintAuthority",
+      "msg": "Invalid mint authority"
     },
     {
       "code": 6006,
-      "name": "InvalidFeePercentage",
-      "msg": "Phí marketplace không hợp lệ"
+      "name": "AlreadyMinted",
+      "msg": "Already minted"
     },
     {
       "code": 6007,
-      "name": "InvalidDuration",
-      "msg": "Thời hạn listing không hợp lệ"
+      "name": "InvalidNFTSupply",
+      "msg": "Invalid NFT supply - must be 1"
     },
     {
       "code": 6008,
-      "name": "AccountNotInitialized",
-      "msg": "Token account chưa được khởi tạo"
+      "name": "InvalidTokenAmount",
+      "msg": "Invalid token amount - must be 1"
     },
     {
       "code": 6009,
-      "name": "InvalidEscrowAccount",
-      "msg": "Invalid escrow token account"
+      "name": "InvalidMarketplaceAuthority",
+      "msg": "Invalid marketplace authority"
     },
     {
       "code": 6010,
-      "name": "InsufficientBalance",
-      "msg": "Số dư không đủ để mua NFT"
-    },
-    {
-      "code": 6011,
-      "name": "CannotBuyOwnNFT",
-      "msg": "Không thể mua NFT của chính mình"
+      "name": "MarketplacePaused",
+      "msg": "Marketplace is paused"
     }
   ],
   "types": [

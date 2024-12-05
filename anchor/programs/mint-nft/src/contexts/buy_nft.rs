@@ -17,7 +17,7 @@ pub struct BuyNft<'info> {
     
     #[account(
         mut,
-        seeds = [b"marketplace"],
+        seeds = [b"marketplace_v2"],
         bump,
         constraint = !config.is_paused @ MarketplaceError::MarketplacePaused
     )]
@@ -25,7 +25,7 @@ pub struct BuyNft<'info> {
     
     #[account(
         mut,
-        seeds = [b"listing", nft_mint.key().as_ref()],
+        seeds = [b"listing_v2", nft_mint.key().as_ref()],
         bump = listing_account.bump,
         close = seller,
         has_one = seller,
@@ -62,6 +62,9 @@ pub struct BuyNft<'info> {
     #[account(mut)]
     pub treasury_wallet: SystemAccount<'info>,
     
+    #[account(mut)]
+    pub creator_wallet: SystemAccount<'info>, // Add creator wallet
+
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -69,14 +72,8 @@ pub struct BuyNft<'info> {
 }
 
 impl<'info> BuyNft<'info> {
-    pub fn buy_nft(&mut self) -> Result<()> {
-        // Check if buyer has enough balance
-        require!(
-            self.buyer.lamports() >= self.listing_account.price,
-            MarketplaceError::InsufficientBalance
-        );
-
-        // Check if buyer is not seller
+    pub fn buy_nft(&mut self, royalty_percentage: u16) -> Result<()> {
+        // Check if buyer is trying to buy their own NFT
         require!(
             self.buyer.key() != self.seller.key(),
             MarketplaceError::CannotBuyOwnNFT
@@ -85,15 +82,44 @@ impl<'info> BuyNft<'info> {
         let listing_price = self.listing_account.price;
         let fee_percentage = self.config.fee_percentage;
 
-        // Calculate fee amount
+        // Calculate marketplace fee
         let fee_amount = (listing_price as u128)
             .checked_mul(fee_percentage as u128)
             .unwrap()
             .checked_div(10000)
             .unwrap() as u64;
 
-        // Calculate seller amount
-        let seller_amount = listing_price.checked_sub(fee_amount).unwrap();
+        // Tính royalty với tham số từ frontend
+        let royalty_amount = (listing_price as u128)
+            .checked_mul(royalty_percentage as u128)
+            .unwrap()
+            .checked_div(10000)
+            .unwrap() as u64;
+
+        // Tính tổng số tiền người mua phải trả
+let total_amount = listing_price
+            .checked_add(fee_amount)
+            .unwrap()
+            .checked_add(royalty_amount)
+            .unwrap();
+
+        // Thêm log messages ở đây
+        msg!("=== Transaction Details ===");
+        msg!("Listing price: {} lamports", listing_price);
+        msg!("Marketplace fee ({}%): {} lamports", fee_percentage as f64 / 100.0, fee_amount);
+        msg!("Royalty ({}%): {} lamports", royalty_percentage as f64 / 100.0, royalty_amount);
+        msg!("Total amount: {} lamports", total_amount);
+        msg!("Buyer balance: {} lamports", self.buyer.lamports());
+        msg!("========================");
+
+        // Kiểm tra số dư của người mua
+        require!(
+            self.buyer.lamports() >= total_amount,
+            MarketplaceError::InsufficientBalance
+        );
+
+        // Calculate final seller amount (seller receives the full listing price)
+        let seller_amount = listing_price;
 
         // Transfer SOL to seller
         system_program::transfer(
@@ -107,7 +133,7 @@ impl<'info> BuyNft<'info> {
             seller_amount,
         )?;
 
-        // Transfer fee to treasury
+        // Transfer marketplace fee
         system_program::transfer(
             CpiContext::new(
                 self.system_program.to_account_info(),
@@ -119,7 +145,20 @@ impl<'info> BuyNft<'info> {
             fee_amount,
         )?;
 
-        // Transfer NFT from escrow to buyer
+        // Transfer royalties to creator(s)
+        // Note: You'll need to add creator accounts to the context
+        system_program::transfer(
+            CpiContext::new(
+                self.system_program.to_account_info(),
+                system_program::Transfer {
+                    from: self.buyer.to_account_info(),
+                    to: self.creator_wallet.to_account_info(), // Add this to context
+                }
+            ),
+            royalty_amount,
+        )?;
+
+        // Transfer NFT
         token::transfer(
             CpiContext::new_with_signer(
                 self.token_program.to_account_info(),
@@ -129,7 +168,7 @@ impl<'info> BuyNft<'info> {
                     authority: self.listing_account.to_account_info(),
                 },
                 &[&[
-                    b"listing",
+                    b"listing_v2",
                     self.nft_mint.key().as_ref(),
                     &[self.listing_account.bump]
                 ]]

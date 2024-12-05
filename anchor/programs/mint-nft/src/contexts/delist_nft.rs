@@ -1,3 +1,4 @@
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token::{self, Token, TokenAccount, Mint, Transfer},
@@ -14,7 +15,7 @@ pub struct DelistNft<'info> {
 
     #[account(
         mut,
-        seeds = [b"listing", nft_mint.key().as_ref()],
+        seeds = [b"listing_v2", nft_mint.key().as_ref()],
         bump,
         constraint = owner.key() == listing_account.seller @ MarketplaceError::InvalidSeller,
         constraint = listing_account.is_active @ MarketplaceError::ListingNotActive,
@@ -53,7 +54,7 @@ impl<'info> DelistNft<'info> {
         let bump = self.listing_account.bump;
         
         let listing_seeds = [
-            b"listing",
+            b"listing_v2",
             nft_mint_key.as_ref(),
             &[bump],
         ];

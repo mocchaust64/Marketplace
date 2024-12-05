@@ -6,7 +6,7 @@ use crate::errors::MarketplaceError;
 pub struct UpdateListingMint<'info> {
     #[account(
         mut,
-        seeds = [b"listing", nft_mint.key().as_ref()],
+        seeds = [b"listing_v2", nft_mint.key().as_ref()],
         bump,
         has_one = seller,
         constraint = listing_account.is_active @ MarketplaceError::ListingNotActive

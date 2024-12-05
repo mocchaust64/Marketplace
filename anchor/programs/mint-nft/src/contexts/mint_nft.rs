@@ -5,6 +5,7 @@ use anchor_spl::{
     metadata::Metadata, 
     token::{Mint, Token, TokenAccount}
 };
+use spl_token::state::Account as SplTokenAccount;
 use anchor_spl::metadata::mpl_token_metadata::instructions::{
     CreateMetadataAccountV3Cpi,
     CreateMetadataAccountV3CpiAccounts,
@@ -22,15 +23,16 @@ pub struct MintNFT<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = mint.mint_authority == Some(owner.key()).into() @ NFTError::InvalidMintAuthority,
+        constraint = mint.supply == 0 @ NFTError::AlreadyMinted,
+    )]
     pub mint: Account<'info, Mint>,
     
-    /// CHECK: PDA as mint authority
-    #[account(
-        seeds = [b"authority"],
-        bump
-    )]
-    pub mint_authority: UncheckedAccount<'info>,
+    /// CHECK: Owner is mint authority
+    #[account(mut)]
+    pub mint_authority: Signer<'info>,
     
     #[account(mut)]
     /// CHECK: Metadata account
@@ -69,12 +71,11 @@ pub struct MintNFT<'info> {
 
 
 impl<'info> MintNFT<'info> {
-    pub fn mint_nft(&mut self, nft_metadata: NFTMetadata, bumps: &MintNFTBumps) -> Result<()> {
-        msg!("Mint NFT with bumps: {:#?}", bumps);
+    pub fn mint_nft(&mut self, nft_metadata: NFTMetadata) -> Result<()> {
+        msg!("Mint NFT");
         
         let mint_authority_seeds = &[
             b"authority".as_ref(),
-            &[bumps.mint_authority]
         ];
         let mint_authority_signer = &[&mint_authority_seeds[..]];
 
@@ -92,19 +93,25 @@ impl<'info> MintNFT<'info> {
             1,
         )?;
 
-        // 2. Create metadata (giữ nguyên phần code cũ)
+        // 2. Create metadata
         let creators = nft_metadata.creators.clone();
         require!(
             creators.iter().map(|c| c.share).sum::<u8>() == 100,
-            NFTError::InvalidMetadata
+NFTError::InvalidMetadata
         );
 
-        // Tạo metadata account như code cũ
+        // Set creator verified to true
+        let verified_creators = creators.iter().map(|c| Creator {
+            address: c.address,
+            verified: true, // Set verified to true
+            share: c.share,
+        }).collect::<Vec<_>>();
+
         let token_metadata_info = self.token_metadata_program.to_account_info();
         let metadata_info = self.metadata.to_account_info();
         let mint_authority_info = self.mint_authority.to_account_info();
         let mint_info = self.mint.to_account_info();
-        let owner_info = self.owner.to_account_info();
+        let owner_info = self.owner.to_account_info(); // Use owner as update authority
         let system_program_info = self.system_program.to_account_info();
         let rent_info = self.rent.to_account_info();
 
@@ -115,7 +122,7 @@ impl<'info> MintNFT<'info> {
                 mint: &mint_info,
                 mint_authority: &mint_authority_info,
                 payer: &owner_info,
-                update_authority: (&mint_authority_info, true),
+                update_authority: (&owner_info, true), // Set owner as update authority
                 system_program: &system_program_info,
                 rent: Some(&rent_info),
             },
@@ -125,7 +132,7 @@ impl<'info> MintNFT<'info> {
                     symbol: nft_metadata.symbol,
                     uri: nft_metadata.uri,
                     seller_fee_basis_points: nft_metadata.seller_fee_basis_points,
-                    creators: Some(Creator::to_metaplex_creators(creators)),
+                    creators: Some(Creator::to_metaplex_creators(verified_creators)), // Use verified creators
                     collection: Some(anchor_spl::metadata::mpl_token_metadata::types::Collection {
                         verified: false,
                         key: self.collection_mint.key(),
@@ -137,7 +144,7 @@ impl<'info> MintNFT<'info> {
             },
         );
 
-        metadata_account.invoke_signed(mint_authority_signer)?;
+        metadata_account.invoke()?; 
 
         Ok(())
     }

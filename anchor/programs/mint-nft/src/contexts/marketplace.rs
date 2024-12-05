@@ -4,6 +4,11 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 use crate::state::{ListingAccount, MarketplaceConfig};
+use crate::errors::NFTError;
+
+// Định nghĩa constant cho seeds
+const MARKETPLACE_SEED: &[u8] = b"marketplace_v2";
+const LISTING_SEED: &[u8] = b"listing_v2";
 
 #[derive(Accounts)]
 pub struct ListNFT<'info> {
@@ -14,17 +19,21 @@ pub struct ListNFT<'info> {
         init,
         payer = owner,
         space = 8 + std::mem::size_of::<ListingAccount>(),
-        seeds = [b"listing", nft_mint.key().as_ref()],
+        seeds = [LISTING_SEED, nft_mint.key().as_ref()],
         bump
     )]
     pub listing_account: Account<'info, ListingAccount>,
     
+    #[account(
+        constraint = nft_mint.supply == 1 @ NFTError::InvalidNFTSupply,
+    )]
     pub nft_mint: Account<'info, Mint>,
     
     #[account(
         mut,
         associated_token::mint = nft_mint,
-        associated_token::authority = owner
+        associated_token::authority = owner,
+        constraint = nft_token.amount == 1 @ NFTError::InvalidTokenAmount
     )]
     pub nft_token: Account<'info, TokenAccount>,
     
@@ -37,9 +46,9 @@ pub struct ListNFT<'info> {
     pub escrow_token_account: Account<'info, TokenAccount>,
     
     #[account(
-        seeds = [b"marketplace"],
+        seeds = [MARKETPLACE_SEED],
         bump,
-        constraint = marketplace_config.authority == owner.key()
+        constraint = !marketplace_config.is_paused @ NFTError::MarketplacePaused
     )]
     pub marketplace_config: Account<'info, MarketplaceConfig>,
     
@@ -54,7 +63,7 @@ impl<'info> ListNFT<'info> {
         let listing = &mut self.listing_account;
         
         let (_, bump) = Pubkey::find_program_address(
-            &[b"listing", self.nft_mint.key().as_ref()],
+            &[LISTING_SEED, self.nft_mint.key().as_ref()],
             &crate::ID
         );
         
@@ -81,15 +90,14 @@ pub struct InitializeMarketplace<'info> {
         init,
         payer = authority,
         space = 8 + 32 + 32 + 8 + 1,
-        seeds = [b"marketplace"],
+        seeds = [MARKETPLACE_SEED],
         bump
     )]
     pub config: Account<'info, MarketplaceConfig>,
     
     /// CHECK: Safe because this is just a wallet
     pub treasury_wallet: AccountInfo<'info>,
-    
-    pub system_program: Program<'info, System>,
+pub system_program: Program<'info, System>,
 }
 
 impl<'info> InitializeMarketplace<'info> {
@@ -104,7 +112,7 @@ impl<'info> InitializeMarketplace<'info> {
         config.is_paused = false;
         
         let (_, bump) = Pubkey::find_program_address(
-            &[b"marketplace"],
+            &[MARKETPLACE_SEED],
             &crate::ID
         );
         config.bump = bump;
@@ -121,7 +129,7 @@ pub struct CloseMarketplace<'info> {
     #[account(
         mut,
         close = authority,
-        seeds = [b"marketplace"],
+        seeds = [MARKETPLACE_SEED],
         bump,
         has_one = authority
     )]
@@ -138,7 +146,7 @@ pub fn close_marketplace(_ctx: Context<CloseMarketplace>) -> Result<()> {
 pub struct PauseMarketplace<'info> {
     #[account(
         mut,
-        seeds = [b"marketplace"],
+        seeds = [MARKETPLACE_SEED],
         bump,
         has_one = authority
     )]
@@ -146,7 +154,6 @@ pub struct PauseMarketplace<'info> {
     
     pub authority: Signer<'info>,
 }
-
 
 impl<'info> PauseMarketplace<'info> {
     pub fn pause(&mut self) -> Result<()> {

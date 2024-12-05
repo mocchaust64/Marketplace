@@ -22,9 +22,8 @@ pub mod nft_marketplace {
     }
     
     pub fn mint_nft(ctx: Context<MintNFT>, nft_metadata: NFTMetadata) -> Result<()> {
-        let bumps = ctx.bumps;
-        msg!("Mint NFT with bumps: {:?}", bumps);
-        ctx.accounts.mint_nft(nft_metadata, &bumps)
+        msg!("Mint NFT");
+        ctx.accounts.mint_nft(nft_metadata) // Bỏ &ctx.bumps vì hàm mint_nft không cần nó
     }
 
     pub fn verify_collection(ctx: Context<VerifyCollectionMint>) -> Result<()> {
@@ -96,8 +95,12 @@ pub mod nft_marketplace {
         Ok(())
     }
 
-    pub fn buy_nft(ctx: Context<BuyNft>) -> Result<()> {
-        ctx.accounts.buy_nft()
+    pub fn buy_nft(ctx: Context<BuyNft>, royalty_percentage: u16) -> Result<()> {
+        require!(
+            royalty_percentage <= 10000, // Max 100% = 10000 basis points
+MarketplaceError::InvalidRoyaltyPercentage
+        );
+        ctx.accounts.buy_nft(royalty_percentage)
     }
 
     pub fn delist_nft(ctx: Context<DelistNft>) -> Result<()> {

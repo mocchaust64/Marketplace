@@ -37,13 +37,43 @@ pub enum MarketplaceError {
     
     #[msg("Không thể mua NFT của chính mình")]
     CannotBuyOwnNFT,
+    
+    #[msg("Phí royalty không hợp lệ")]
+    InvalidRoyaltyPercentage,
 }
 
 #[error_code]
 pub enum NFTError {
+    #[msg("Invalid metadata")]
     InvalidMetadata,
+    
+    #[msg("Invalid collection metadata")]
     InvalidCollectionMetadata,
+    
+    #[msg("Metadata update not allowed")]
     MetadataUpdateNotAllowed,
+    
+    #[msg("Invalid creator share")]
     InvalidCreatorShare,
+    
+    #[msg("Invalid authority")]
     InvalidAuthority,
+    
+    #[msg("Invalid mint authority")]
+    InvalidMintAuthority,
+    
+    #[msg("Already minted")]
+    AlreadyMinted,
+    
+    #[msg("Invalid NFT supply - must be 1")]
+    InvalidNFTSupply,
+    
+    #[msg("Invalid token amount - must be 1")]
+    InvalidTokenAmount,
+    
+    #[msg("Invalid marketplace authority")]
+    InvalidMarketplaceAuthority,
+    #[msg("Marketplace is paused")]  // Thêm error này
+    MarketplacePaused,
+
 }

@@ -56,7 +56,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -76,7 +79,10 @@ export type NftMarketplace = {
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -365,6 +371,10 @@ export type NftMarketplace = {
           "writable": true
         },
         {
+          "name": "creatorWallet",
+          "writable": true
+        },
+        {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         },
@@ -381,7 +391,12 @@ export type NftMarketplace = {
           "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "royaltyPercentage",
+          "type": "u16"
+        }
+      ]
     },
     {
       "name": "closeMarketplace",
@@ -422,7 +437,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -637,7 +655,10 @@ export type NftMarketplace = {
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -885,7 +906,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -938,7 +962,10 @@ export type NftMarketplace = {
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -1148,7 +1175,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1206,24 +1236,8 @@ export type NftMarketplace = {
         },
         {
           "name": "mintAuthority",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  117,
-                  116,
-                  104,
-                  111,
-                  114,
-                  105,
-                  116,
-                  121
-                ]
-              }
-            ]
-          }
+          "writable": true,
+          "signer": true
         },
         {
           "name": "metadata",
@@ -1398,7 +1412,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1445,7 +1462,10 @@ export type NftMarketplace = {
                   108,
                   97,
                   99,
-                  101
+                  101,
+                  95,
+                  118,
+                  50
                 ]
               }
             ]
@@ -1488,7 +1508,10 @@ export type NftMarketplace = {
                   116,
                   105,
                   110,
-                  103
+                  103,
+                  95,
+                  118,
+                  50
                 ]
               },
               {
@@ -1667,63 +1690,58 @@ export type NftMarketplace = {
   "errors": [
     {
       "code": 6000,
-      "name": "marketplacePaused",
-      "msg": "Marketplace đang tạm dừng"
+      "name": "invalidMetadata",
+      "msg": "Invalid metadata"
     },
     {
       "code": 6001,
-      "name": "invalidPrice",
-      "msg": "Giá phải lớn hơn 0"
+      "name": "invalidCollectionMetadata",
+      "msg": "Invalid collection metadata"
     },
     {
       "code": 6002,
-      "name": "invalidOwner",
-      "msg": "Bạn không sở hữu NFT này"
+      "name": "metadataUpdateNotAllowed",
+      "msg": "Metadata update not allowed"
     },
     {
       "code": 6003,
-      "name": "invalidSeller",
-      "msg": "Bạn không phải người bán NFT này"
+      "name": "invalidCreatorShare",
+      "msg": "Invalid creator share"
     },
     {
       "code": 6004,
-      "name": "invalidCollection",
-      "msg": "NFT không thuộc collection này"
+      "name": "invalidAuthority",
+      "msg": "Invalid authority"
     },
     {
       "code": 6005,
-      "name": "listingNotActive",
-      "msg": "NFT listing không còn active"
+      "name": "invalidMintAuthority",
+      "msg": "Invalid mint authority"
     },
     {
       "code": 6006,
-      "name": "invalidFeePercentage",
-      "msg": "Phí marketplace không hợp lệ"
+      "name": "alreadyMinted",
+      "msg": "Already minted"
     },
     {
       "code": 6007,
-      "name": "invalidDuration",
-      "msg": "Thời hạn listing không hợp lệ"
+      "name": "invalidNftSupply",
+      "msg": "Invalid NFT supply - must be 1"
     },
     {
       "code": 6008,
-      "name": "accountNotInitialized",
-      "msg": "Token account chưa được khởi tạo"
+      "name": "invalidTokenAmount",
+      "msg": "Invalid token amount - must be 1"
     },
     {
       "code": 6009,
-      "name": "invalidEscrowAccount",
-      "msg": "Invalid escrow token account"
+      "name": "invalidMarketplaceAuthority",
+      "msg": "Invalid marketplace authority"
     },
     {
       "code": 6010,
-      "name": "insufficientBalance",
-      "msg": "Số dư không đủ để mua NFT"
-    },
-    {
-      "code": 6011,
-      "name": "cannotBuyOwnNft",
-      "msg": "Không thể mua NFT của chính mình"
+      "name": "marketplacePaused",
+      "msg": "Marketplace is paused"
     }
   ],
   "types": [
